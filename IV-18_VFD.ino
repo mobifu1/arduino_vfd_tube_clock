@@ -17,7 +17,7 @@ String version = "V0.1";
 #define HIGH_VOLTAGE A1 //measure Pin for Anoden voltage
 
 // Decimal numbers to bitmask for the 7-segments (+ decimal Point)
-uint8_t number_bitmask[11] = {
+uint8_t number_bitmask[50] = {
   //                          a_
   0b11101110, // 0           f|_|b    g:_    0bxf,a,b,g,e,c,d,h
   0b00100100, // 1           e|_|c .h
@@ -29,15 +29,10 @@ uint8_t number_bitmask[11] = {
   0b01100100, // 7
   0b11111110, // 8
   0b11110111, // 9
-  0b00000000  // 10 = off
-};
-
-// Alphabet to bitmask for the 7-segments
-uint8_t alphabet_bitmask[27] = {
-  //                          a_
-  0b11101100, // A           f|_|b    g:_    0bxf,a,b,g,e,c,d,h
-  0b10011110, // b           e|_|c .h
-  0b00011010, // c             d
+  0b00000000, // space
+  0b11101100, // A
+  0b10011110, // b
+  0b00011010, // c
   0b00111110, // d
   0b11011010, // E
   0b11011000, // F
@@ -61,7 +56,6 @@ uint8_t alphabet_bitmask[27] = {
   0b10111100, // x
   0b10110100, // Y
   0b01111010, // Z
-  0b00000000  // space
 };
 
 // Bitmask for selecting the digits from left to right
@@ -87,8 +81,7 @@ boolean dot = true;
 boolean minus = false;
 
 byte current_digit = 0;
-byte display_value[8] = {0, 0, 10, 0, 0, 10, 0, 0};
-byte display_alpha[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+byte display_value[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 //--------------------------------------------------------------------------
 void setup() {
@@ -106,10 +99,12 @@ void setup() {
   //set values on display
   display_value[0] = 1;
   display_value[1] = 2;
-  display_value[3] = 3;
-  display_value[4] = 4;
-  display_value[6] = 5;
-  display_value[7] = 6;
+  display_value[2] = 3;
+  display_value[3] = 4;
+  display_value[4] = 11;
+  display_value[5] = 12;
+  display_value[6] = 13;
+  display_value[7] = 14;
 
 }
 
