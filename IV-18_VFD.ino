@@ -113,7 +113,7 @@ void loop() {
 
   // Show Value on Tube
   multiplex();
-  brightness_control(5);
+  brightness_control(4, 128);//divide factor 1-5, Puls width 0-128
 
 }
 
@@ -173,7 +173,7 @@ void my_shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t val) {
 }
 
 //---------------Brightness Control----------------------------------------------
-void brightness_control(byte Brightness_Value) {//1-5
+void brightness_control(byte divide_Value, byte Brightness_Value) {//1-5, 0-128
 
   int voltage = analogRead(HIGH_VOLTAGE);
   Serial.print("Voltage:");
@@ -181,14 +181,14 @@ void brightness_control(byte Brightness_Value) {//1-5
 
   //Divide PWM frequency to prevent inductor from singing
   int value;
-  if (Brightness_Value == 5) value = 1;
-  if (Brightness_Value == 4) value = 8;
-  if (Brightness_Value == 3) value = 64;
-  if (Brightness_Value == 2) value = 256;
-  if (Brightness_Value == 1) value = 1024;
+  if (divide_Value == 5) value = 1;
+  if (divide_Value == 4) value = 8;
+  if (divide_Value == 3) value = 64;
+  if (divide_Value == 2) value = 256;
+  if (divide_Value == 1) value = 1024;
 
   setPwmFrequency(BOOST, value); //1,8,64,256,1024
-  analogWrite(BOOST, 40);
+  analogWrite(BOOST, Brightness_Value); //Pulse Width 0-128
 
 }
 
