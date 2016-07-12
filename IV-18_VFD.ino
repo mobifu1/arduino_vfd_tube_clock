@@ -14,7 +14,7 @@ String version = "V0.1";
 #define CLK      13 //Driver: Shifts in a Bit on rising edge
 #define DIN      11 //Driver: Data In (gets shiftet on CLK rising edge)
 #define BOOST    10 //PWM-Signal for boost power supply
-#define HIGH_VOLTAGE A1 //measure Pin for Anoden voltage
+#define HIGH_VOLTAGE A1 //measure Pin for Anoden voltage, resistor divider 100k and 1k
 
 // Decimal numbers to bitmask for the 7-segments (+ decimal Point)
 uint8_t number_bitmask[50] = {
@@ -173,22 +173,22 @@ void my_shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t val) {
 }
 
 //---------------Brightness Control----------------------------------------------
-void brightness_control(byte divide_Value, byte Brightness_Value) {//1-5, 0-128
+void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-128
 
   int voltage = analogRead(HIGH_VOLTAGE);
   Serial.print("Voltage:");
-  Serial.println(voltage);
+  Serial.println(voltage * 4.8828 / 10);
 
   //Divide PWM frequency to prevent inductor from singing
   int value;
-  if (divide_Value == 5) value = 1;
-  if (divide_Value == 4) value = 8;
-  if (divide_Value == 3) value = 64;
-  if (divide_Value == 2) value = 256;
-  if (divide_Value == 1) value = 1024;
+  if (divide_value == 5) value = 1;
+  if (divide_value == 4) value = 8;
+  if (divide_value == 3) value = 64;
+  if (divide_value == 2) value = 256;
+  if (divide_value == 1) value = 1024;
 
   setPwmFrequency(BOOST, value); //1,8,64,256,1024
-  analogWrite(BOOST, Brightness_Value); //Pulse Width 0-128
+  analogWrite(BOOST, brightness_value); //Pulse Width 0-128
 
 }
 
