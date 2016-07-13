@@ -1,7 +1,7 @@
 //********************************************************************
 //********************************************************************
-//Arduino Uno Driver for IV-18 VFD & MAX6921
-//Steampunk vintage GPS Clock
+//********* Arduino Uno Driver for IV-18 VFD & MAX6921 ***************
+//*************** Steampunk Vintage GPS Clock ************************
 //********************************************************************
 //********************************************************************
 #include "Wire.h"
@@ -113,7 +113,7 @@ void loop() {
 
   // Show Value on Tube
   multiplex();
-  brightness_control(4, 128);//divide factor 1-5, Puls width 0-128
+  brightness_control(4, 20);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
 }
 
@@ -173,11 +173,16 @@ void my_shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t val) {
 }
 
 //---------------Brightness Control----------------------------------------------
-void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-128
+void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   int voltage = analogRead(HIGH_VOLTAGE);
-  Serial.print("Voltage:");
-  Serial.println(voltage * 4.8828 / 10);
+  voltage = voltage * 4.8828 / 10;
+  if (voltage < 20 || voltage > 80) {
+    Serial.print("Voltage out of Range: ");
+    Serial.print(String(voltage));
+    Serial.println(" V");
+    delay (1000);
+  }
 
   //Divide PWM frequency to prevent inductor from singing
   int value;
@@ -188,7 +193,7 @@ void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-128
   if (divide_value == 1) value = 1024;
 
   setPwmFrequency(BOOST, value); //1,8,64,256,1024
-  analogWrite(BOOST, brightness_value); //Pulse Width 0-128
+  analogWrite(BOOST, brightness_value); //Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
 }
 
