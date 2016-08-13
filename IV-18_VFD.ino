@@ -7,182 +7,197 @@
 #include "Wire.h"
 #include "Time.h"
 
-String version = "V0.1";
-// Defined Pin
-#define BLANK     7 //Driver: If this is HIGH, the driver sets all Outputs to LOW
-#define LOAD      8 //Driver: Loads the data from shift register to output latch
-#define CLK      13 //Driver: Shifts in a Bit on rising edge
-#define DIN      11 //Driver: Data In (gets shiftet on CLK rising edge)
-#define BOOST    10 //PWM-Signal for boost power supply
+#define blank 7
+#define load 8
+#define clk 12
+#define din 11
+#define led 13
+#define BOOST 10 //PWM-Signal for boost power supply
 #define HIGH_VOLTAGE A1 //measure Pin for Anoden voltage, resistor divider 100k and 1k
 
-// Decimal numbers to bitmask for the 7-segments (+ decimal Point)
-uint8_t number_bitmask[50] = {
-  //                          a_
-  0b11101110, // 0           f|_|b    g:_    0bxf,a,b,g,e,c,d,h
-  0b00100100, // 1           e|_|c .h
-  0b01111010, // 2             d
-  0b01110110, // 3
-  0b10110100, // 4
-  0b11010110, // 5
-  0b11011111, // 6
-  0b01100100, // 7
-  0b11111110, // 8
-  0b11110111, // 9
-  0b00000000, // space
-  0b11101100, // A
-  0b10011110, // b
-  0b00011010, // c
-  0b00111110, // d
-  0b11011010, // E
-  0b11011000, // F
-  0b11011110, // G
-  0b10111100, // H
-  0b00100100, // I
-  0b00100110, // J
-  0b10011000, // K
-  0b10001010, // L
-  0b11101100, // M
-  0b00011100, // n
-  0b00011110, // o
-  0b11110000, // P
-  0b11101110, // Q
-  0b00011000, // R
-  0b11011100, // S
-  0b10011010, // t
-  0b00001110, // u
-  0b10101110, // V
-  0b10101110, // W
-  0b10111100, // x
-  0b10110100, // Y
-  0b01111010, // Z
-};
+//value:
+boolean a;
+boolean b;
+boolean c;
+boolean d;
+boolean e;
+boolean f;
+boolean g;
 
-// Bitmask for selecting the digits from left to right
-uint8_t digit_bitmask[9] = {
-  0b00000100, // left most 7-segment digit
-  0b00100000,
-  0b00010000,
-  0b00001000,
-  0b01000000,
-  0b00000010,
-  0b10000000,
-  0b00000001, // right most 7-segment digit
-  0b00000000  // signs (dot and minus)
-};
+//decimal point:
+boolean dp;
 
-// Bitmasks for the minus and the dot
-uint8_t dot_bitmask   = 0b00000001;
-uint8_t minus_bitmask = 0b00010000;
-
-// global variables
-byte brightness = 5; //1-5
-boolean dot = true;
-boolean minus = false;
-
-byte current_digit = 0;
-byte display_value[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-//--------------------------------------------------------------------------
+//digits:
+boolean digit_1;
+boolean digit_2;
+boolean digit_3;
+boolean digit_4;
+boolean digit_5;
+boolean digit_6;
+boolean digit_7;
+boolean digit_8;
+boolean digit_9;
+//------------------------------------------------------------------------------
 void setup() {
 
   Serial.begin(9600);
+  pinMode(led, OUTPUT);
+  pinMode(din, OUTPUT);
+  pinMode(load, OUTPUT);
+  pinMode(clk, OUTPUT);
+  pinMode(blank, OUTPUT);
 
-  pinMode(BLANK,   OUTPUT);
-  pinMode(LOAD,    OUTPUT);
-  pinMode(CLK,     OUTPUT);
-  pinMode(DIN,     OUTPUT);
-
-  digitalWrite(BLANK , LOW); // Disable blank
-
-  //Test Display:
-  //set values on display
-  display_value[0] = 1;
-  display_value[1] = 2;
-  display_value[2] = 3;
-  display_value[3] = 4;
-  display_value[4] = 11;
-  display_value[5] = 12;
-  display_value[6] = 13;
-  display_value[7] = 14;
-
+  digitalWrite(blank, LOW);
+  digitalWrite(clk, LOW);
+  digitalWrite(load, LOW);
+  digitalWrite(din, LOW);
 }
-
-//-------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void loop() {
 
-  // Show Value on Tube
-  multiplex();
-  brightness_control(4, 20);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-
+  brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  set_vfd_values("1", false, 8);
+  set_vfd_values("2", false, 7);
+  set_vfd_values("-", false, 6);
+  set_vfd_values("3", false, 5);
+  set_vfd_values("4", false, 4);
+  set_vfd_values("-", false, 3);
+  set_vfd_values("5", false, 2);
+  set_vfd_values("5", false, 1);
 }
+//------------------------------------------------------------------------------
+void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) {
+  byte bit_muster;
+  if (vfd_value == "0")  bit_muster = 0b11101110;//0b(d,c,e,g,b,f,a,0)
+  if (vfd_value == "1")  bit_muster = 0b01001000;
+  if (vfd_value == "2")  bit_muster = 0b10111010;
+  if (vfd_value == "3")  bit_muster = 0b11011010;
+  if (vfd_value == "4")  bit_muster = 0b01011100;
+  if (vfd_value == "5")  bit_muster = 0b11010110;
+  if (vfd_value == "6")  bit_muster = 0b11110110;
+  if (vfd_value == "7")  bit_muster = 0b01001010;
+  if (vfd_value == "8")  bit_muster = 0b11111110;
+  if (vfd_value == "9")  bit_muster = 0b11011110;
+  if (vfd_value == "-")  bit_muster = 0b00010000;
 
-//---------------display values on tube------------------------------------------
-void multiplex() {
+  //                               _ a
+  //                             f|_|b    g:_
+  //                             e|_|c .h
+  //                               d
+  g = false;
+  if (bit_muster > 127) g = true;
+  bit_muster = bit_muster << 1;
+  f = false;
+  if (bit_muster > 127) f = true;
+  bit_muster = bit_muster << 1;
+  e = false;
+  if (bit_muster > 127) e = true;
+  bit_muster = bit_muster << 1;
+  d = false;
+  if (bit_muster > 127) d = true;
+  bit_muster = bit_muster << 1;
+  c = false;
+  if (bit_muster > 127) c = true;
+  bit_muster = bit_muster << 1;
+  b = false;
+  if (bit_muster > 127) b = true;
+  bit_muster = bit_muster << 1;
+  a = false;
+  if (bit_muster > 127) a = true;
+  //-------------------------------------------------
+  dp = false;
+  if (decimal_point == true) dp = true;
+  //-------------------------------------------------
+  digit_1 = false;
+  if (vfd_position == 1) digit_1 = true;//right position
+  digit_2 = false;
+  if (vfd_position == 2) digit_2 = true;
+  digit_3 = false;
+  if (vfd_position == 3) digit_3 = true;
+  digit_4 = false;
+  if (vfd_position == 4) digit_4 = true;
+  digit_5 = false;
+  if (vfd_position == 5) digit_5 = true;
+  digit_6 = false;
+  if (vfd_position == 6) digit_6 = true;
+  digit_7 = false;
+  if (vfd_position == 7) digit_7 = true;
+  digit_8 = false;
+  if (vfd_position == 8) digit_8 = true;
+  digit_9 = false;
+  if (vfd_position == 9) digit_9 = true;
 
-  uint8_t value = 0;
-  boolean signs = LOW;
-
-  if (current_digit == 9) current_digit = 0;
-
-  if (current_digit == 8) {
-    if (dot) value = (value | dot_bitmask);//bitwise or
-    if (minus) value = (value | minus_bitmask);
-    signs = HIGH;
-  } else {
-    value = number_bitmask[display_value[current_digit]];
-  }
-
-  digitalWrite(LOAD, LOW);
-
-  my_shiftOut(DIN, CLK, digit_bitmask[current_digit]);
-
-  digitalWrite(DIN, signs);
-  digitalWrite(CLK, LOW);
-  digitalWrite(CLK, HIGH);
-
-  digitalWrite(DIN, LOW);
-  digitalWrite(CLK, LOW);
-  digitalWrite(CLK, HIGH);
-
-  digitalWrite(DIN, LOW);
-  digitalWrite(CLK, LOW);
-  digitalWrite(CLK, HIGH);
-
-  digitalWrite(DIN, LOW);
-  digitalWrite(CLK, LOW);
-  digitalWrite(CLK, HIGH);
-
-  my_shiftOut(DIN, CLK, value);
-
-  digitalWrite(LOAD, HIGH);
-
-  current_digit++;
-
+  write_vfd();
 }
+//------------------------------------------------------------------------------
+void write_vfd() {
 
-//-----Changed original shiftOut to use rising edge instead of falling edge------
-void my_shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t val) {
-  uint8_t i;
-
-  for (i = 0; i < 8; i++) {
-    digitalWrite(dataPin, !!(val & (1 << (7 - i))));
-    digitalWrite(clockPin, LOW);
-    digitalWrite(clockPin, HIGH);
-  }
+  //write OUT19 with first clock signal
+  digitalWrite(load, LOW);
+  delay(0);
+  digitalWrite(din, a); //bit 19
+  serial_clock();
+  digitalWrite(din, b); //bit 18
+  serial_clock();
+  digitalWrite(din, c); //bit 17
+  serial_clock();
+  digitalWrite(din, d); //bit 16
+  serial_clock();
+  digitalWrite(din, e); //bit 15
+  serial_clock();
+  digitalWrite(din, f); //bit 14
+  serial_clock();
+  digitalWrite(din, g); //bit 13
+  serial_clock();
+  digitalWrite(din, digit_2); //bit 12
+  serial_clock();
+  digitalWrite(din, dp); //bit 11
+  serial_clock();
+  digitalWrite(din, digit_4); //bit 10
+  serial_clock();
+  digitalWrite(din, digit_6); //bit 9
+  serial_clock();
+  digitalWrite(din, digit_7); //bit 8
+  serial_clock();
+  digitalWrite(din, digit_8); //bit 7
+  serial_clock();
+  digitalWrite(din, digit_5); //bit 6
+  serial_clock();
+  digitalWrite(din, digit_3); //bit 5
+  serial_clock();
+  digitalWrite(din, digit_1); //bit 4
+  serial_clock();
+  digitalWrite(din, digit_9); //bit 3
+  serial_clock();
+  digitalWrite(din, LOW); //bit 2
+  serial_clock();
+  digitalWrite(din, LOW); //bit 1
+  serial_clock();
+  digitalWrite(din, LOW); //bit 0
+  serial_clock();
+  digitalWrite(load, HIGH);
+  delay(0);
 }
+//------------------------------------------------------------------------------
+void serial_clock() {
 
+  delay(0);
+  digitalWrite(clk, LOW);
+  delay(0);
+  digitalWrite(clk, HIGH);
+  delay(0);
+}
 //---------------Brightness Control----------------------------------------------
 void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   int voltage = analogRead(HIGH_VOLTAGE);
   voltage = voltage * 4.8828 / 10;
-  if (voltage < 20 || voltage > 80) {
-    Serial.print("Voltage out of Range: ");
-    Serial.print(String(voltage));
-    Serial.println(" V");
-    delay (1000);
-  }
+  // if (voltage < 20 || voltage > 80) {
+  //Serial.print("Voltage out of Range: ");
+  //  Serial.print(String(voltage));
+  //  Serial.println(" V");
+  //  delay (1000);
+  // }
 
   //Divide PWM frequency to prevent inductor from singing
   int value;
