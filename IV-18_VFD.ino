@@ -58,8 +58,32 @@ void setup() {
   digitalWrite(clk, LOW);
   digitalWrite(load, LOW);
   digitalWrite(din, LOW);
+
+ for (int i = 0 ; i <= 1425 ; i++){
+    brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+   if (i < 75) set_string("        ");  //must bea string of length 8
+   else if (i < 150) set_string("       G");
+   else if (i < 225) set_string("      GU");
+   else if (i < 300) set_string("     GUT");
+   else if (i < 375) set_string("    GUTE");
+   else if (i < 450) set_string("   GUTEN");
+   else if (i < 525) set_string("  GUTEN ");
+   else if (i < 600) set_string(" GUTEN T");
+   else if (i < 675) set_string("GUTEN TA");
+   else if (i < 750) set_string("UTEN TAG");
+   else if (i < 825) set_string("TEN TAG ");
+   else if (i < 900) set_string("EN TAG  ");
+   else if (i < 975) set_string("N TAG   ");
+   else if (i < 1050) set_string(" TAG     ");
+   else if (i < 1125) set_string("TAG      ");
+   else if (i < 1200) set_string("AG       ");
+   else if (i < 1275) set_string("G        ");
+   else if (i < 1350) set_string("         ");
+  }
 }
+
 //------------------------------------------------------------------------------
+
 void loop() {
  
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
@@ -78,40 +102,32 @@ void loop() {
   String minute_string = String(minute_int);
   String second_string = String(second_int);
 
-  if (hour_string.length() == 1){                               //writing hour on tube
-    set_vfd_values("0", false, 8);
-    set_vfd_values(hour_string.substring(0), false, 7);
-  } else {
-      set_vfd_values(hour_string.substring(0,1), false, 8);
-      set_vfd_values(hour_string.substring(1), false, 7);
-    }                                                           //writing hour on tube end
-
-  set_vfd_values("-", false, 6);                //minus
-
-  if (minute_string.length() == 1){                             //writing minute on tube
-    set_vfd_values("0", false, 5);
-    set_vfd_values(minute_string.substring(0), false, 4);
-  } else {
-      set_vfd_values(minute_string.substring(0,1), false, 5);
-      set_vfd_values(minute_string.substring(1), false, 4);
-    }                                                           //writing minute on tube end
+  if (hour_string.length() == 1)  hour_string = "0" + hour_string;           //adding a 0 if hour is 0-9
+  if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
+  if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
   
-  set_vfd_values("-", false, 3);                //minus
+  String time_string = hour_string + "-" + minute_string + "-" + second_string;
 
-  if (second_string.length() == 1){                             //writing second on tube
-    set_vfd_values("0", false, 2);
-    set_vfd_values(second_string.substring(0), false, 1);
-  } else {
-      set_vfd_values(second_string.substring(0,1), false, 2);
-      set_vfd_values(second_string.substring(1), false, 1);
-    }                                                           //writing second on tube end
- 
+  set_string(time_string);    //must be a string of length 8
+}
+
+//------------------------------------------------------------------------------
+
+void set_string(String string) {
+  set_vfd_values(string.substring(0,1), false, 8);
+  set_vfd_values(string.substring(1,2), false, 7);
+  set_vfd_values(string.substring(2,3), false, 6);            
+  set_vfd_values(string.substring(3,4), false, 5);
+  set_vfd_values(string.substring(4,5), false, 4);
+  set_vfd_values(string.substring(5,6), false, 3);               
+  set_vfd_values(string.substring(6,7), false, 2);
+  set_vfd_values(string.substring(7,8), false, 1);
 }
 
 //------------------------------------------------------------------------------
 void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) {
   byte bit_muster;
-  if (vfd_value == "0")  bit_muster = 0b11101110;//0b(d,c,e,g,b,f,a,0)
+  if (vfd_value == "0")  bit_muster = 0b11101110; //0b(d,c,e,g,b,f,a,0)
   if (vfd_value == "1")  bit_muster = 0b01001000;
   if (vfd_value == "2")  bit_muster = 0b10111010;
   if (vfd_value == "3")  bit_muster = 0b11011010;
@@ -121,12 +137,40 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == "7")  bit_muster = 0b01001010;
   if (vfd_value == "8")  bit_muster = 0b11111110;
   if (vfd_value == "9")  bit_muster = 0b11011110;
-  if (vfd_value == "-") bit_muster = 0b00010000; 
-
+  if (vfd_value == " ")  bit_muster = 0b00000000; //empty digit
+  if (vfd_value == "-")  bit_muster = 0b00010000; 
+  if (vfd_value == "A")  bit_muster = 0b01111110;
+  if (vfd_value == "B")  bit_muster = 0b11110111;
+  if (vfd_value == "C")  bit_muster = 0b10100100;
+  if (vfd_value == "D")  bit_muster = 0b11111000;
+  if (vfd_value == "E")  bit_muster = 0b10110110;
+  if (vfd_value == "F")  bit_muster = 0b00111100;
+  if (vfd_value == "G")  bit_muster = 0b11110110;
+  if (vfd_value == "H")  bit_muster = 0b01111100;
+  if (vfd_value == "I")  bit_muster = 0b01001000;
+  if (vfd_value == "J")  bit_muster = 0b11101000;
+  //if (vfd_value == "K")  bit_muster = 0b11011110;
+  if (vfd_value == "L")  bit_muster = 0b10100100;
+  //if (vfd_value == "M")  bit_muster = 0b11111110;
+  if (vfd_value == "N")  bit_muster = 0b01101110;
+  if (vfd_value == "O")  bit_muster = 0b11101110;
+  if (vfd_value == "P")  bit_muster = 0b00111110;
+  //if (vfd_value == "Q")  bit_muster = 0b11011110;
+  //if (vfd_value == "R")  bit_muster = 0b11110110;
+  //if (vfd_value == "S")  bit_muster = 0b01001010;
+  if (vfd_value == "T")  bit_muster = 0b10110100;
+  if (vfd_value == "U")  bit_muster = 0b11101100;
+  //if (vfd_value == "V")  bit_muster = 0b11110110;
+  //if (vfd_value == "W")  bit_muster = 0b01001010;
+  //if (vfd_value == "X")  bit_muster = 0b11111110;
+  //if (vfd_value == "Y")  bit_muster = 0b11011110;
+  //if (vfd_value == "Z")  bit_muster = 0b11110110;
+ 
   //                               _ a
   //                             f|_|b    g:_
   //                             e|_|c .h
   //                               d
+  
   g = false;
   if (bit_muster > 127) g = true;
   bit_muster = bit_muster << 1;
@@ -172,7 +216,9 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
 
   write_vfd();
 }
+
 //------------------------------------------------------------------------------
+
 void write_vfd() {
 
   //write OUT19 with first clock signal
@@ -221,7 +267,9 @@ void write_vfd() {
   digitalWrite(load, HIGH);
   delay(0);
 }
+
 //------------------------------------------------------------------------------
+
 void serial_clock() {
 
   delay(0);
@@ -230,7 +278,9 @@ void serial_clock() {
   digitalWrite(clk, HIGH);
   delay(0);
 }
+
 //---------------Brightness Control----------------------------------------------
+
 void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   int voltage = analogRead(HIGH_VOLTAGE);
