@@ -82,29 +82,29 @@ void loop() {
     set_vfd_values("0", false, 8);
     set_vfd_values(hour_string.substring(0), false, 7);
   } else {
-           set_vfd_values(hour_string.substring(0,1), false, 8);
-           set_vfd_values(hour_string.substring(1), false, 7);
-  }                                                            //writing hour on tube end
+      set_vfd_values(hour_string.substring(0,1), false, 8);
+      set_vfd_values(hour_string.substring(1), false, 7);
+    }                                                           //writing hour on tube end
 
   set_vfd_values("-", false, 6);                //minus
 
-  if (minute_string.length() == 1){                            //writing minute on tube
+  if (minute_string.length() == 1){                             //writing minute on tube
     set_vfd_values("0", false, 5);
     set_vfd_values(minute_string.substring(0), false, 4);
   } else {
-           set_vfd_values(minute_string.substring(0,1), false, 5);
-           set_vfd_values(minute_string.substring(1), false, 4);
-  }                                                            //writing minute on tube end
+      set_vfd_values(minute_string.substring(0,1), false, 5);
+      set_vfd_values(minute_string.substring(1), false, 4);
+    }                                                           //writing minute on tube end
   
   set_vfd_values("-", false, 3);                //minus
 
-  if (second_string.length() == 1){                            //writing second on tube
+  if (second_string.length() == 1){                             //writing second on tube
     set_vfd_values("0", false, 2);
     set_vfd_values(second_string.substring(0), false, 1);
   } else {
-           set_vfd_values(second_string.substring(0,1), false, 2);
-           set_vfd_values(second_string.substring(1), false, 1);
-  }                                                            //writing second on tube end
+      set_vfd_values(second_string.substring(0,1), false, 2);
+      set_vfd_values(second_string.substring(1), false, 1);
+    }                                                           //writing second on tube end
  
 }
 
