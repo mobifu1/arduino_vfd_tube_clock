@@ -59,43 +59,43 @@ void setup() {
   digitalWrite(load, LOW);
   digitalWrite(din, LOW);
 
- for (int i = 0 ; i <= 1425 ; i++){
+  for (int i = 0 ; i <= 1425 ; i++) {
     brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-   if (i < 75) set_string("        ");  //must bea string of length 8
-   else if (i < 150) set_string("       G");
-   else if (i < 225) set_string("      GU");
-   else if (i < 300) set_string("     GUT");
-   else if (i < 375) set_string("    GUTE");
-   else if (i < 450) set_string("   GUTEN");
-   else if (i < 525) set_string("  GUTEN ");
-   else if (i < 600) set_string(" GUTEN T");
-   else if (i < 675) set_string("GUTEN TA");
-   else if (i < 750) set_string("UTEN TAG");
-   else if (i < 825) set_string("TEN TAG ");
-   else if (i < 900) set_string("EN TAG  ");
-   else if (i < 975) set_string("N TAG   ");
-   else if (i < 1050) set_string(" TAG     ");
-   else if (i < 1125) set_string("TAG      ");
-   else if (i < 1200) set_string("AG       ");
-   else if (i < 1275) set_string("G        ");
-   else if (i < 1350) set_string("         ");
+    if (i < 75) set_string("        ");  //must bea string of length 8
+    else if (i < 150) set_string("       G");
+    else if (i < 225) set_string("      GU");
+    else if (i < 300) set_string("     GUT");
+    else if (i < 375) set_string("    GUTE");
+    else if (i < 450) set_string("   GUTEN");
+    else if (i < 525) set_string("  GUTEN ");
+    else if (i < 600) set_string(" GUTEN T");
+    else if (i < 675) set_string("GUTEN TA");
+    else if (i < 750) set_string("UTEN TAG");
+    else if (i < 825) set_string("TEN TAG ");
+    else if (i < 900) set_string("EN TAG  ");
+    else if (i < 975) set_string("N TAG   ");
+    else if (i < 1050) set_string(" TAG     ");
+    else if (i < 1125) set_string("TAG      ");
+    else if (i < 1200) set_string("AG       ");
+    else if (i < 1275) set_string("G        ");
+    else if (i < 1350) set_string("         ");
   }
 }
 
 //------------------------------------------------------------------------------
 
 void loop() {
- 
+
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-  
-  if (second_int == 59){  //timer
-    if (minute_int == 59){
-      if (hour_int == 23){
+
+  if (second_int == 59) { //timer
+    if (minute_int == 59) {
+      if (hour_int == 23) {
         hour_int = 0;
       } else hour_int ++;
       minute_int = 0;
-    }else minute_int ++;
-  second_int = 0;
+    } else minute_int ++;
+    second_int = 0;
   } else second_int ++;  //timer end
 
   String hour_string = String(hour_int);
@@ -105,7 +105,7 @@ void loop() {
   if (hour_string.length() == 1)  hour_string = "0" + hour_string;           //adding a 0 if hour is 0-9
   if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
-  
+
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
 
   set_string(time_string);    //must be a string of length 8
@@ -114,14 +114,14 @@ void loop() {
 //------------------------------------------------------------------------------
 
 void set_string(String string) {
-  set_vfd_values(string.substring(0,1), false, 8);
-  set_vfd_values(string.substring(1,2), false, 7);
-  set_vfd_values(string.substring(2,3), false, 6);            
-  set_vfd_values(string.substring(3,4), false, 5);
-  set_vfd_values(string.substring(4,5), false, 4);
-  set_vfd_values(string.substring(5,6), false, 3);               
-  set_vfd_values(string.substring(6,7), false, 2);
-  set_vfd_values(string.substring(7,8), false, 1);
+  set_vfd_values(string.substring(0, 1), false, 8);
+  set_vfd_values(string.substring(1, 2), false, 7);
+  set_vfd_values(string.substring(2, 3), false, 6);
+  set_vfd_values(string.substring(3, 4), false, 5);
+  set_vfd_values(string.substring(4, 5), false, 4);
+  set_vfd_values(string.substring(5, 6), false, 3);
+  set_vfd_values(string.substring(6, 7), false, 2);
+  set_vfd_values(string.substring(7, 8), false, 1);
 }
 
 //------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == "8")  bit_muster = 0b11111110;
   if (vfd_value == "9")  bit_muster = 0b11011110;
   if (vfd_value == " ")  bit_muster = 0b00000000; //empty digit
-  if (vfd_value == "-")  bit_muster = 0b00010000; 
+  if (vfd_value == "-")  bit_muster = 0b00010000;
   if (vfd_value == "A")  bit_muster = 0b01111110;
   if (vfd_value == "B")  bit_muster = 0b11110111;
   if (vfd_value == "C")  bit_muster = 0b10100100;
@@ -165,12 +165,12 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   //if (vfd_value == "X")  bit_muster = 0b11111110;
   //if (vfd_value == "Y")  bit_muster = 0b11011110;
   //if (vfd_value == "Z")  bit_muster = 0b11110110;
- 
+
   //                               _ a
   //                             f|_|b    g:_
   //                             e|_|c .h
   //                               d
-  
+
   g = false;
   if (bit_muster > 127) g = true;
   bit_muster = bit_muster << 1;
