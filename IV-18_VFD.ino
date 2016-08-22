@@ -4,6 +4,8 @@
 //*************** Steampunk Vintage GPS Clock ************************
 //**************** Author: Andreas & Tommy ***************************
 //********************************************************************
+//// MAX6921
+//// datasheet: http://datasheets.maximintegrated.com/en/ds/MAX6921-MAX6931.pdf
 #include "Wire.h"
 #include "Time.h"
 
@@ -37,6 +39,11 @@ boolean digit_6;
 boolean digit_7;
 boolean digit_8;
 boolean digit_9;
+
+//test with timer:
+int my_hour = 0;
+int my_minute = 0;
+int my_second = 0;
 //------------------------------------------------------------------------------
 void setup() {
 
@@ -56,29 +63,105 @@ void setup() {
 void loop() {
 
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-  set_vfd_values("1", false, 8);
-  set_vfd_values("2", false, 7);
-  set_vfd_values("-", false, 6);
-  set_vfd_values("3", false, 5);
-  set_vfd_values("4", false, 4);
-  set_vfd_values("-", false, 3);
-  set_vfd_values("5", false, 2);
-  set_vfd_values("5", false, 1);
+//  set_vfd_values("1", false, 8);
+//  set_vfd_values("2", false, 7);
+//  set_vfd_values("-", false, 6);
+//  set_vfd_values("3", false, 5);
+//  set_vfd_values("4", false, 4);
+//  set_vfd_values("-", false, 3);
+//  set_vfd_values("5", false, 2);
+//  set_vfd_values("5", false, 1);
+  
+  if (my_second == 59){  //timer
+    if (my_minute == 59){
+      if (my_hour == 23){
+        my_hour = 0;
+      } else my_hour ++;
+      my_minute = 0;
+    }else my_minute ++;
+  my_second = 0;
+  } else my_second ++;  //timer end
+
+
+
+  if (my_hour < 10){                           //writing on the tube: hour
+    set_vfd_values(0, false, 8);
+  }
+  else if (my_hour < 20 && my_hour >= 10){
+    set_vfd_values(1, false, 8);
+  }
+  else if (my_hour < 25 && my_hour >=20){
+    set_vfd_values(2, false, 8);
+  }
+  int hour_2 = my_hour % 10;
+  set_vfd_values(hour_2, false, 7);            // writing on the tube: hour end
+
+
+  set_vfd_values(10, false, 6);                 //10 for minus 
+
+
+  if (my_minute < 10){                          //writing on the tube: minute
+    set_vfd_values(0, false, 5);
+  }
+  else if (my_minute < 20 && my_minute >= 10){
+    set_vfd_values(1, false, 5);
+  }
+  else if (my_minute < 30 && my_minute >= 20){
+    set_vfd_values(2, false, 5);
+  }
+  else if (my_minute < 40 && my_minute >= 30){
+    set_vfd_values(3, false, 5);
+  }
+  else if (my_minute < 50 && my_minute >= 40){
+    set_vfd_values(4, false, 5);
+  }
+  else if (my_minute < 60 && my_minute >= 50){
+    set_vfd_values(5, false, 5);
+  }
+  int minute_2 = my_minute % 10;
+  set_vfd_values(minute_2, false, 4);          //writing on the tube: minute end
+
+  
+  set_vfd_values(10, false, 3);                //10 for minus 
+
+
+  if (my_second < 10){                         //writing on the tube: second
+    set_vfd_values(0, false, 2);
+  }
+  else if (my_second < 20 && my_second >= 10){
+    set_vfd_values(1, false, 2);
+  }
+  else if (my_second < 30 && my_second >= 20){
+    set_vfd_values(2, false, 2);
+  }
+  else if (my_second < 40 && my_second >= 30){
+    set_vfd_values(3, false, 2);
+  }
+  else if (my_second < 50 && my_second >= 40){
+    set_vfd_values(4, false, 2);
+  }
+  else if (my_second < 60 && my_second >= 50){
+    set_vfd_values(5, false, 2);
+  }
+  int second_2 = my_second % 10;
+  set_vfd_values(second_2, false, 1);          //writing on the tube: second end
+ 
 }
+
 //------------------------------------------------------------------------------
-void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) {
+void set_vfd_values(int vfd_value, boolean decimal_point, byte vfd_position) {
   byte bit_muster;
-  if (vfd_value == "0")  bit_muster = 0b11101110;//0b(d,c,e,g,b,f,a,0)
-  if (vfd_value == "1")  bit_muster = 0b01001000;
-  if (vfd_value == "2")  bit_muster = 0b10111010;
-  if (vfd_value == "3")  bit_muster = 0b11011010;
-  if (vfd_value == "4")  bit_muster = 0b01011100;
-  if (vfd_value == "5")  bit_muster = 0b11010110;
-  if (vfd_value == "6")  bit_muster = 0b11110110;
-  if (vfd_value == "7")  bit_muster = 0b01001010;
-  if (vfd_value == "8")  bit_muster = 0b11111110;
-  if (vfd_value == "9")  bit_muster = 0b11011110;
-  if (vfd_value == "-")  bit_muster = 0b00010000;
+  if (vfd_value == 0)  bit_muster = 0b11101110;//0b(d,c,e,g,b,f,a,0)
+  if (vfd_value == 1)  bit_muster = 0b01001000;
+  if (vfd_value == 2)  bit_muster = 0b10111010;
+  if (vfd_value == 3)  bit_muster = 0b11011010;
+  if (vfd_value == 4)  bit_muster = 0b01011100;
+  if (vfd_value == 5)  bit_muster = 0b11010110;
+  if (vfd_value == 6)  bit_muster = 0b11110110;
+  if (vfd_value == 7)  bit_muster = 0b01001010;
+  if (vfd_value == 8)  bit_muster = 0b11111110;
+  if (vfd_value == 9)  bit_muster = 0b11011110;
+  if (vfd_value == 10) bit_muster = 0b00010000;  //minus
 
   //                               _ a
   //                             f|_|b    g:_
@@ -251,3 +334,5 @@ void setPwmFrequency(int pin, int divisor) {
     TCCR2B = TCCR2B & 0b11111000 | mode;
   }
 }
+
+
