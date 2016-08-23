@@ -58,6 +58,8 @@ void setup() {
   digitalWrite(clk, LOW);
   digitalWrite(lload, LOW);
   digitalWrite(din, LOW);
+
+  set_vfd_scroll_text("GUTEN TAG");
 }
 //------------------------------------------------------------------------------
 void loop() {
@@ -83,8 +85,8 @@ void loop() {
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
-  //set_vfd_text(time_string);    //must be a string of length 8
-  set_vfd_scroll_text(time_string);
+  set_vfd_text(time_string);    //must be a string of length 8
+  // set_vfd_scroll_text(time_string);
 }
 //------------------------------------------------------------------------------
 void set_vfd_scroll_text(String text) {
@@ -92,12 +94,15 @@ void set_vfd_scroll_text(String text) {
   String scroll_text = "        " + text + "        ";// 8x space chart
   int len = scroll_text.length();
 
-  for (int i = 0 ; i < (len - 8) ; i++) {
-    String value = scroll_text.substring(i, i + 8);
-    set_vfd_text(value);    //must be a string of length 8
-    delay(500);
+  for (int i = 0 ; i <= (len - 8) ; i++) {
+    for (int j = 0; j <= 100 ; j++) {
+      brightness_control(2, 10);
+      String value = scroll_text.substring(i, i + 8);
+      set_vfd_text(value);    //must be a string of length 8
+    }
   }
 }
+
 //------------------------------------------------------------------------------
 void set_vfd_text(String string) {
 
@@ -110,7 +115,8 @@ void set_vfd_text(String string) {
   set_vfd_values(string.substring(6, 7), false, 2);
   set_vfd_values(string.substring(7, 8), false, 1);
 }
-//------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------
 void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) {
 
   byte bit_muster;
