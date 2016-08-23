@@ -85,8 +85,8 @@ void loop() {
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
+
   set_vfd_text(time_string);    //must be a string of length 8
-  // set_vfd_scroll_text(time_string);
 }
 //------------------------------------------------------------------------------
 void set_vfd_scroll_text(String text) {
@@ -133,12 +133,12 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == " ")  bit_muster = 0b00000000; //empty digit
   if (vfd_value == "-")  bit_muster = 0b00010000;
   if (vfd_value == "A")  bit_muster = 0b01111110;
-  if (vfd_value == "B")  bit_muster = 0b11110111;
-  if (vfd_value == "C")  bit_muster = 0b10100100;
+  if (vfd_value == "B")  bit_muster = 0b11110100;
+  if (vfd_value == "C")  bit_muster = 0b10100110;
   if (vfd_value == "D")  bit_muster = 0b11111000;
   if (vfd_value == "E")  bit_muster = 0b10110110;
-  if (vfd_value == "F")  bit_muster = 0b00111100;
-  if (vfd_value == "G")  bit_muster = 0b11110110;
+  if (vfd_value == "F")  bit_muster = 0b00110110;
+  if (vfd_value == "G")  bit_muster = 0b11100110;
   if (vfd_value == "H")  bit_muster = 0b01111100;
   if (vfd_value == "I")  bit_muster = 0b01001000;
   if (vfd_value == "J")  bit_muster = 0b11101000;
@@ -148,16 +148,16 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == "N")  bit_muster = 0b01101110;
   if (vfd_value == "O")  bit_muster = 0b11101110;
   if (vfd_value == "P")  bit_muster = 0b00111110;
-  //if (vfd_value == "Q")  bit_muster = 0b11011110;
-  //if (vfd_value == "R")  bit_muster = 0b11110110;
-  //if (vfd_value == "S")  bit_muster = 0b01001010;
+  if (vfd_value == "Q")  bit_muster = 0b01011110;
+  if (vfd_value == "R")  bit_muster = 0b00110000;
+  if (vfd_value == "S")  bit_muster = 0b11010110;
   if (vfd_value == "T")  bit_muster = 0b10110100;
   if (vfd_value == "U")  bit_muster = 0b11101100;
   //if (vfd_value == "V")  bit_muster = 0b11110110;
   //if (vfd_value == "W")  bit_muster = 0b01001010;
   //if (vfd_value == "X")  bit_muster = 0b11111110;
-  //if (vfd_value == "Y")  bit_muster = 0b11011110;
-  //if (vfd_value == "Z")  bit_muster = 0b11110110;
+  if (vfd_value == "Y")  bit_muster = 0b11011100;
+  if (vfd_value == "Z")  bit_muster = 0b10111010; //0b(d,c,e,g,b,f,a,0)
 
   //                               _ a
   //                             f|_|b    g:_
