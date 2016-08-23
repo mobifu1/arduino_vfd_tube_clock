@@ -10,7 +10,7 @@
 #include "Time.h"
 
 #define blank 7
-#define load 8
+#define lload 8
 #define clk 12
 #define din 11
 #define led 13
@@ -50,40 +50,16 @@ void setup() {
   Serial.begin(9600);
   pinMode(led, OUTPUT);
   pinMode(din, OUTPUT);
-  pinMode(load, OUTPUT);
+  pinMode(lload, OUTPUT);
   pinMode(clk, OUTPUT);
   pinMode(blank, OUTPUT);
 
   digitalWrite(blank, LOW);
   digitalWrite(clk, LOW);
-  digitalWrite(load, LOW);
+  digitalWrite(lload, LOW);
   digitalWrite(din, LOW);
-
-  for (int i = 0 ; i <= 1425 ; i++) {
-    brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-    if (i < 75) set_string("        ");  //must bea string of length 8
-    else if (i < 150) set_string("       G");
-    else if (i < 225) set_string("      GU");
-    else if (i < 300) set_string("     GUT");
-    else if (i < 375) set_string("    GUTE");
-    else if (i < 450) set_string("   GUTEN");
-    else if (i < 525) set_string("  GUTEN ");
-    else if (i < 600) set_string(" GUTEN T");
-    else if (i < 675) set_string("GUTEN TA");
-    else if (i < 750) set_string("UTEN TAG");
-    else if (i < 825) set_string("TEN TAG ");
-    else if (i < 900) set_string("EN TAG  ");
-    else if (i < 975) set_string("N TAG   ");
-    else if (i < 1050) set_string(" TAG     ");
-    else if (i < 1125) set_string("TAG      ");
-    else if (i < 1200) set_string("AG       ");
-    else if (i < 1275) set_string("G        ");
-    else if (i < 1350) set_string("         ");
-  }
 }
-
 //------------------------------------------------------------------------------
-
 void loop() {
 
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
@@ -107,13 +83,24 @@ void loop() {
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
-
-  set_string(time_string);    //must be a string of length 8
+  //set_vfd_text(time_string);    //must be a string of length 8
+  set_vfd_scroll_text(time_string);
 }
-
 //------------------------------------------------------------------------------
+void set_vfd_scroll_text(String text) {
 
-void set_string(String string) {
+  String scroll_text = "        " + text + "        ";// 8x space chart
+  int len = scroll_text.length();
+
+  for (int i = 0 ; i < (len - 8) ; i++) {
+    String value = scroll_text.substring(i, i + 8);
+    set_vfd_text(value);    //must be a string of length 8
+    delay(500);
+  }
+}
+//------------------------------------------------------------------------------
+void set_vfd_text(String string) {
+
   set_vfd_values(string.substring(0, 1), false, 8);
   set_vfd_values(string.substring(1, 2), false, 7);
   set_vfd_values(string.substring(2, 3), false, 6);
@@ -123,9 +110,9 @@ void set_string(String string) {
   set_vfd_values(string.substring(6, 7), false, 2);
   set_vfd_values(string.substring(7, 8), false, 1);
 }
-
 //------------------------------------------------------------------------------
 void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) {
+
   byte bit_muster;
   if (vfd_value == "0")  bit_muster = 0b11101110; //0b(d,c,e,g,b,f,a,0)
   if (vfd_value == "1")  bit_muster = 0b01001000;
@@ -218,11 +205,10 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
 }
 
 //------------------------------------------------------------------------------
-
 void write_vfd() {
 
   //write OUT19 with first clock signal
-  digitalWrite(load, LOW);
+  digitalWrite(lload, LOW);
   delay(0);
   digitalWrite(din, a); //bit 19
   serial_clock();
@@ -264,12 +250,11 @@ void write_vfd() {
   serial_clock();
   digitalWrite(din, LOW); //bit 0
   serial_clock();
-  digitalWrite(load, HIGH);
+  digitalWrite(lload, HIGH);
   delay(0);
 }
 
 //------------------------------------------------------------------------------
-
 void serial_clock() {
 
   delay(0);
@@ -280,7 +265,6 @@ void serial_clock() {
 }
 
 //---------------Brightness Control----------------------------------------------
-
 void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   int voltage = analogRead(HIGH_VOLTAGE);
@@ -344,5 +328,3 @@ void setPwmFrequency(int pin, int divisor) {
     TCCR2B = TCCR2B & 0b11111000 | mode;
   }
 }
-
-
