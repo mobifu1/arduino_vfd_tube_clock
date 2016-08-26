@@ -62,6 +62,7 @@ void setup() {
   digitalWrite(din, LOW);
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
+  set_vfd_blink_text("12345678", 250, 15);
   set_vfd_scroll_text("GUTEN TAG", 250);
 }
 //------------------------------------------------------------------------------
@@ -115,6 +116,22 @@ void set_vfd_scroll_text(String text, int delay_time) {
     }
     String value = scroll_text.substring(i, i + 8);
     set_vfd_text(value);    //must be a string of length 8
+  }
+}
+//------------------------------------------------------------------------------
+void set_vfd_blink_text(String text, int blink_frequency, int often) {
+
+  long system_time = 0;
+  int i = 1; // counter
+
+  while (i < often) { // blinking how often
+
+    if (system_time + blink_frequency < millis()) {
+      system_time = millis();
+      i++;
+    }
+    if (0 == i % 2) set_vfd_text(text);    //must be a string of length 8
+    if (1 == i % 2) set_vfd_text("        ");    //must be a string of length 8
   }
 }
 //------------------------------------------------------------------------------
