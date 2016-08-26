@@ -7,7 +7,15 @@
 //// MAX6921
 //// datasheet: http://datasheets.maximintegrated.com/en/ds/MAX6921-MAX6931.pdf
 #include "Wire.h"
-#include "Time.h"
+//#include "Time.h"
+#include "TimeLib.h"
+#include "DCF77.h"
+
+#define DCF_PIN 2           // Connection pin to DCF 77 device
+#define DCF_INTERRUPT 0    // Interrupt number associated with pin
+
+time_t time;
+DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
 
 #define blank 7
 #define lload 8
@@ -49,6 +57,8 @@ long system_clock = 0;
 //------------------------------------------------------------------------------
 void setup() {
 
+  DCF.Start();
+
   Serial.begin(9600);
   pinMode(led, OUTPUT);
   pinMode(din, OUTPUT);
@@ -64,25 +74,35 @@ void setup() {
 
   set_vfd_blink_text("12345678", 250, 15);
   set_vfd_scroll_text("GUTEN TAG", 250);
+
 }
 //------------------------------------------------------------------------------
 void loop() {
 
-  if (system_clock + 1000 < millis()) {
-    system_clock = millis();
-    second_int++;
-  }
+  time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
 
-  if (second_int == 60) { //time counter
-    second_int = 0;
-    minute_int ++;
+  if (DCFtime == 0) {
 
-    if (minute_int == 60) {
-      minute_int = 0;
-      hour_int ++;
+    boolean val = digitalRead(DCF_PIN);
+    if (val == LOW) digitalWrite(led, LOW);
+    if (val == HIGH) digitalWrite(led, HIGH);
 
-      if (hour_int == 24) {
-        hour_int = 0;
+    if (system_clock + 1000 < millis()) {
+      system_clock = millis();
+      second_int++;
+    }
+
+    if (second_int == 60) { //time counter
+      second_int = 0;
+      minute_int ++;
+
+      if (minute_int == 60) {
+        minute_int = 0;
+        hour_int ++;
+
+        if (hour_int == 24) {
+          hour_int = 0;
+        }
       }
     }
   }
@@ -96,10 +116,21 @@ void loop() {
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
-
   set_vfd_text(time_string);    //must be a string of length 8
 
+  if (DCFtime != 0) {
+
+    digitalWrite(led, HIGH);
+    setTime(DCFtime);
+    hour_int = hour();
+    minute_int = minute();
+    second_int = second();
+    //day()
+    //month()
+    //year()
+  }
 }
+
 //------------------------------------------------------------------------------
 void set_vfd_scroll_text(String text, int delay_time) {
 
@@ -118,6 +149,7 @@ void set_vfd_scroll_text(String text, int delay_time) {
     set_vfd_text(value);    //must be a string of length 8
   }
 }
+
 //------------------------------------------------------------------------------
 void set_vfd_blink_text(String text, int blink_frequency, int often) {
 
@@ -134,6 +166,7 @@ void set_vfd_blink_text(String text, int blink_frequency, int often) {
     if (1 == i % 2) set_vfd_text("        ");    //must be a string of length 8
   }
 }
+
 //------------------------------------------------------------------------------
 void set_vfd_text(String string) {
 
