@@ -40,10 +40,12 @@ boolean digit_7;
 boolean digit_8;
 boolean digit_9;
 
-//test with timer:
+//Time:
 int hour_int = 0;
 int minute_int = 0;
 int second_int = 0;
+
+long system_clock = 0;
 //------------------------------------------------------------------------------
 void setup() {
 
@@ -58,23 +60,31 @@ void setup() {
   digitalWrite(clk, LOW);
   digitalWrite(lload, LOW);
   digitalWrite(din, LOW);
+  brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
-  set_vfd_scroll_text("GUTEN TAG");
+  set_vfd_scroll_text("GUTEN TAG", 250);
 }
 //------------------------------------------------------------------------------
 void loop() {
 
-  brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  if (system_clock + 1000 < millis()) {
+    system_clock = millis();
+    second_int++;
+  }
 
-  if (second_int == 59) { //timer
-    if (minute_int == 59) {
-      if (hour_int == 23) {
-        hour_int = 0;
-      } else hour_int ++;
-      minute_int = 0;
-    } else minute_int ++;
+  if (second_int == 60) { //time counter
     second_int = 0;
-  } else second_int ++;  //timer end
+    minute_int ++;
+
+    if (minute_int == 60) {
+      minute_int = 0;
+      hour_int ++;
+
+      if (hour_int == 24) {
+        hour_int = 0;
+      }
+    }
+  }
 
   String hour_string = String(hour_int);
   String minute_string = String(minute_int);
@@ -87,22 +97,26 @@ void loop() {
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
 
   set_vfd_text(time_string);    //must be a string of length 8
+
 }
 //------------------------------------------------------------------------------
-void set_vfd_scroll_text(String text) {
+void set_vfd_scroll_text(String text, int delay_time) {
 
-  String scroll_text = "        " + text + "        ";// 8x space chart
+  long system_time = 0;
+  int i = 0; // counter
+  String scroll_text = "        " + text + "        "; // 8x space chart
   int len = scroll_text.length();
 
-  for (int i = 0 ; i <= (len - 8) ; i++) {
-    for (int j = 0; j <= 100 ; j++) {
-      brightness_control(2, 10);
-      String value = scroll_text.substring(i, i + 8);
-      set_vfd_text(value);    //must be a string of length 8
+  while (i < len - 8) {
+
+    if (system_time + delay_time < millis()) {
+      system_time = millis();
+      i++;
     }
+    String value = scroll_text.substring(i, i + 8);
+    set_vfd_text(value);    //must be a string of length 8
   }
 }
-
 //------------------------------------------------------------------------------
 void set_vfd_text(String string) {
 
@@ -275,6 +289,7 @@ void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   int voltage = analogRead(HIGH_VOLTAGE);
   voltage = voltage * 4.8828 / 10;
+
   // if (voltage < 20 || voltage > 80) {
   //Serial.print("Voltage out of Range: ");
   //  Serial.print(String(voltage));
