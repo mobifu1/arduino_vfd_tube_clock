@@ -13,6 +13,7 @@
 
 #define DCF_PIN 2           // Connection pin to DCF 77 device
 #define DCF_INTERRUPT 0    // Interrupt number associated with pin
+#define SWITCH_0 0
 
 time_t time;
 DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
@@ -23,7 +24,6 @@ DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
 #define din 11
 #define led 13
 #define BOOST 10 //PWM-Signal for boost power supply
-#define HIGH_VOLTAGE A1 //measure Pin for Anoden voltage, resistor divider 100k and 1k
 
 //value:
 boolean a;
@@ -52,6 +52,12 @@ boolean digit_9;
 int hour_int = 0;
 int minute_int = 0;
 int second_int = 0;
+int day_int = 1;
+int month_int = 1;
+int year_int = 1970;
+const char *Month[12] = {"JANUAR", "FEBRUAR", "MAERZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"};
+boolean sync_indicator = false;
+boolean sync_dcf77 = false;
 
 long system_clock = 0;
 //------------------------------------------------------------------------------
@@ -70,6 +76,8 @@ void setup() {
   digitalWrite(clk, LOW);
   digitalWrite(lload, LOW);
   digitalWrite(din, LOW);
+
+  pinMode(SWITCH_0, INPUT);
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
   set_vfd_blink_text("12345678", 250, 15);
@@ -81,11 +89,15 @@ void loop() {
 
   time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
 
+  if (second_int == 59 && minute_int == 59) sync_dcf77 = false; // force to resync > left point on vfd tube
+
   if (DCFtime == 0) {
 
-    boolean val = digitalRead(DCF_PIN);
-    if (val == LOW) digitalWrite(led, LOW);
-    if (val == HIGH) digitalWrite(led, HIGH);
+    if (sync_dcf77 == false) {
+      boolean val = digitalRead(DCF_PIN);
+      if (val == LOW) sync_indicator = false;
+      if (val == HIGH) sync_indicator = true;
+    }
 
     if (system_clock + 1000 < millis()) {
       system_clock = millis();
@@ -107,17 +119,6 @@ void loop() {
     }
   }
 
-  String hour_string = String(hour_int);
-  String minute_string = String(minute_int);
-  String second_string = String(second_int);
-
-  if (hour_string.length() == 1)  hour_string = "0" + hour_string;           //adding a 0 if hour is 0-9
-  if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
-  if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
-
-  String time_string = hour_string + "-" + minute_string + "-" + second_string;
-  set_vfd_text(time_string);    //must be a string of length 8
-
   if (DCFtime != 0) {
 
     digitalWrite(led, HIGH);
@@ -125,10 +126,32 @@ void loop() {
     hour_int = hour();
     minute_int = minute();
     second_int = second();
-    //day()
-    //month()
-    //year()
+    day_int = day();
+    month_int = month();
+    year_int = year();
+    sync_dcf77 = true;
+    sync_indicator = false;
   }
+
+  //----------------------------------
+  String hour_string = String(hour_int);
+  String minute_string = String(minute_int);
+  String second_string = String(second_int);
+  String day_string = String(day_int);
+  String month_string = Month[month_int - 1];
+  String year_string = String(year_int);
+
+  if (day_string.length() == 1)  day_string = "0" + day_string;              //adding a 0 if day is 0-9
+  if (hour_string.length() == 1)  hour_string = "0" + hour_string;           //adding a 0 if hour is 0-9
+  if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
+  if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
+
+  String date_string = day_string + " " + month_string + " " + year_string;
+  String time_string = hour_string + "-" + minute_string + "-" + second_string;
+
+  if (digitalRead(SWITCH_0) == LOW) {
+    set_vfd_scroll_text(date_string, 200);
+  } else set_vfd_text(time_string, sync_indicator);   //must be a string of length 8
 }
 
 //------------------------------------------------------------------------------
@@ -146,7 +169,7 @@ void set_vfd_scroll_text(String text, int delay_time) {
       i++;
     }
     String value = scroll_text.substring(i, i + 8);
-    set_vfd_text(value);    //must be a string of length 8
+    set_vfd_text(value, false);    //must be a string of length 8
   }
 }
 
@@ -162,13 +185,13 @@ void set_vfd_blink_text(String text, int blink_frequency, int often) {
       system_time = millis();
       i++;
     }
-    if (0 == i % 2) set_vfd_text(text);    //must be a string of length 8
-    if (1 == i % 2) set_vfd_text("        ");    //must be a string of length 8
+    if (0 == i % 2) set_vfd_text(text, false);   //must be a string of length 8
+    if (1 == i % 2) set_vfd_text("        ", false);    //must be a string of length 8
   }
 }
 
 //------------------------------------------------------------------------------
-void set_vfd_text(String string) {
+void set_vfd_text(String string, boolean left_point) {
 
   set_vfd_values(string.substring(0, 1), false, 8);
   set_vfd_values(string.substring(1, 2), false, 7);
@@ -178,6 +201,7 @@ void set_vfd_text(String string) {
   set_vfd_values(string.substring(5, 6), false, 3);
   set_vfd_values(string.substring(6, 7), false, 2);
   set_vfd_values(string.substring(7, 8), false, 1);
+  set_vfd_values(" ", left_point, 9);
 }
 
 //-------------------------------------------------------------------------------
@@ -206,9 +230,9 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == "H")  bit_muster = 0b01111100;
   if (vfd_value == "I")  bit_muster = 0b01001000;
   if (vfd_value == "J")  bit_muster = 0b11101000;
-  //if (vfd_value == "K")  bit_muster = 0b11011110;
+  if (vfd_value == "K")  bit_muster = 0b00110100;
   if (vfd_value == "L")  bit_muster = 0b10100100;
-  //if (vfd_value == "M")  bit_muster = 0b11111110;
+  if (vfd_value == "M")  bit_muster = 0b01100010;
   if (vfd_value == "N")  bit_muster = 0b01101110;
   if (vfd_value == "O")  bit_muster = 0b11101110;
   if (vfd_value == "P")  bit_muster = 0b00111110;
@@ -217,8 +241,8 @@ void set_vfd_values(String vfd_value, boolean decimal_point, byte vfd_position) 
   if (vfd_value == "S")  bit_muster = 0b11010110;
   if (vfd_value == "T")  bit_muster = 0b10110100;
   if (vfd_value == "U")  bit_muster = 0b11101100;
-  //if (vfd_value == "V")  bit_muster = 0b11110110;
-  //if (vfd_value == "W")  bit_muster = 0b01001010;
+  if (vfd_value == "V")  bit_muster = 0b11100000;
+  if (vfd_value == "W")  bit_muster = 0b10001100;
   //if (vfd_value == "X")  bit_muster = 0b11111110;
   if (vfd_value == "Y")  bit_muster = 0b11011100;
   if (vfd_value == "Z")  bit_muster = 0b10111010; //0b(d,c,e,g,b,f,a,0)
@@ -336,16 +360,6 @@ void serial_clock() {
 
 //---------------Brightness Control----------------------------------------------
 void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
-
-  int voltage = analogRead(HIGH_VOLTAGE);
-  voltage = voltage * 4.8828 / 10;
-
-  // if (voltage < 20 || voltage > 80) {
-  //Serial.print("Voltage out of Range: ");
-  //  Serial.print(String(voltage));
-  //  Serial.println(" V");
-  //  delay (1000);
-  // }
 
   //Divide PWM frequency to prevent inductor from singing
   int value;
