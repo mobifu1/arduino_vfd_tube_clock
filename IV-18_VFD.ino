@@ -81,7 +81,7 @@ void setup() {
   brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
   set_vfd_blink_text("DCF V1.0", 250, 15);
-  set_vfd_scroll_text("SEARCH RADIO SIGNAL........", 250);
+  set_vfd_scroll_text("SEARCHING RADIO SIGNAL........", 250);
 
 }
 //------------------------------------------------------------------------------
@@ -145,11 +145,11 @@ void loop() {
   if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
-  String date_string = day_string + ". " + month_string + " " + year_string;
+  String date_string = day_string + " " + month_string + " " + year_string;
   String time_string = hour_string + "-" + minute_string + "-" + second_string;
 
   if (digitalRead(SWITCH_0) == LOW) {
-    set_vfd_scroll_text(date_string, 200);
+    set_vfd_scroll_date(date_string, 200);
   } else set_vfd_text(time_string, sync_indicator);   //must be a string of length 8
 }
 
@@ -201,6 +201,41 @@ void set_vfd_text(String string, boolean left_point) {
   set_vfd_values(string.substring(6, 7), false, 2);
   set_vfd_values(string.substring(7, 8), false, 1);
   set_vfd_values(" ", left_point, 9);
+}
+
+//------------------------------------------------------------------------------
+void set_vfd_scroll_date(String string, int delay_time) {  //function for floating point for date
+
+  long system_time = 0;
+  int i = 0; // counter
+  String scroll_date = "        " + string + "        "; // 8x space chart
+  int len = scroll_date.length();
+
+  while (i < len - 8) {
+
+    if (system_time + delay_time < millis()) {
+      system_time = millis();
+      i++;
+    }
+    String date = scroll_date.substring(i, i + 8);
+
+    if (i == 9) set_vfd_values(date.substring(0, 1), true, 8);
+    else set_vfd_values(date.substring(0, 1), false, 8);
+    if (i == 8) set_vfd_values(date.substring(1, 2), true, 7);
+    else set_vfd_values(date.substring(1, 2), false, 7);
+    if (i == 7) set_vfd_values(date.substring(2, 3), true, 6);
+    else set_vfd_values(date.substring(2, 3), false, 6);
+    if (i == 6) set_vfd_values(date.substring(3, 4), true, 5);
+    else set_vfd_values(date.substring(3, 4), false, 5);
+    if (i == 5) set_vfd_values(date.substring(4, 5), true, 4);
+    else set_vfd_values(date.substring(4, 5), false, 4);
+    if (i == 4) set_vfd_values(date.substring(5, 6), true, 3);
+    else set_vfd_values(date.substring(5, 6), false, 3);
+    if (i == 3) set_vfd_values(date.substring(6, 7), true, 2);
+    else set_vfd_values(date.substring(6, 7), false, 2);
+    if (i == 2) set_vfd_values(date.substring(7, 8), true, 1);
+    else set_vfd_values(date.substring(7, 8), false, 1);
+  }
 }
 
 //-------------------------------------------------------------------------------
