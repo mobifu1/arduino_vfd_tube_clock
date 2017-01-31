@@ -78,10 +78,10 @@ void setup() {
   digitalWrite(din, LOW);
 
   pinMode(SWITCH_0, INPUT);
-  brightness_control(2, 10);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  brightness_control(2, 20);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
 
   set_vfd_blink_text("DCF V1.0", 250, 15);
-  set_vfd_scroll_text("SEARCHING RADIO SIGNAL........", 250);
+  set_vfd_scroll_text("SEARCHING SIGNAL........", 250);
 
 }
 //------------------------------------------------------------------------------
@@ -89,14 +89,13 @@ void loop() {
 
   time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
 
-  if (second_int == 59 && minute_int == 59) sync_dcf77 = false; // force to resync > left point on vfd tube
+  if (second_int  == 59 && (minute_int % 20 == 0)) sync_dcf77 = false; // force to resync every 20 minutes > left point on vfd tube
 
   if (DCFtime == 0) {
-
     if (sync_dcf77 == false) {
-      boolean val = digitalRead(DCF_PIN);
+      /* boolean val = digitalRead(DCF_PIN);
       if (val == LOW) sync_indicator = false;
-      if (val == HIGH) sync_indicator = true;
+      if (val == HIGH)*/ sync_indicator = true;
     }
 
     if (system_clock + 1000 < millis()) {
@@ -117,13 +116,13 @@ void loop() {
         }
       }
     }
-  }
-
+  } 
   if (DCFtime != 0) {
-
+Serial.println("DCF==1"); 
     setTime(DCFtime);
     hour_int = hour();
     minute_int = minute();
+    Serial.println(minute_int); 
     second_int = second();
     day_int = day();
     month_int = month();
