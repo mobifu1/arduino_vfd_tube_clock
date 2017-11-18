@@ -93,9 +93,9 @@ void loop() {
 
   if (DCFtime == 0) {
     if (sync_dcf77 == false) {
-      /* boolean val = digitalRead(DCF_PIN);
+       boolean val = digitalRead(DCF_PIN);
       if (val == LOW) sync_indicator = false;
-      if (val == HIGH)*/ sync_indicator = true;
+      if (val == HIGH) sync_indicator = true;
     }
 
     if (system_clock + 1000 < millis()) {
