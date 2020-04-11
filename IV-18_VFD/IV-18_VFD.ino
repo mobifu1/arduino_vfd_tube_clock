@@ -59,9 +59,9 @@ int day_int = 0;
 int month_int = 0;
 int year_int = 0;
 
-boolean sync_indicator = false;
-boolean ntp_sync = false;
-String ntp_time_date = "";
+boolean ntp_sync_indicator = false;
+boolean ntp_request_is_send = false;
+String data = "";
 
 //------------------------------------------------------------------------------
 void setup() {
@@ -90,19 +90,15 @@ void loop() {
 
   serial0_event(); // scan for ntp time of Serial.port:
 
-  if (ntp_sync == false) {
-    sync_indicator = true;
-    if (second() == 0) {
-      delay(1000);
+  if (second() == 0) {
+    if (ntp_request_is_send == false) {
+      ntp_sync_indicator = true;
       Serial.println("ntp-sync: false");
+      ntp_request_is_send = true;
     }
   }
-
-  if (ntp_sync == true) {
-    sync_indicator = false;
-    if (minute() == 1 && second() == 0) {
-      ntp_sync = false;
-    }
+  else {
+    ntp_request_is_send = false;
   }
 
   hour_int = hour();
@@ -131,52 +127,51 @@ void loop() {
     brightness_control(1, 0); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
   }
   if (is_night == 1) {
-    set_vfd_text(time_string, sync_indicator);   //must be a string of length 8
+    set_vfd_text(time_string, ntp_sync_indicator);   //must be a string of length 8
     brightness_control(2, 20); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
   }
-
 }
 //----------------------------------------------------------------------------------------------------------------------
 void serial0_event() {
 
   if (Serial.available() > 0) {
-    ntp_time_date = "";
-    ntp_time_date = Serial.readStringUntil('\n');
-    ntp_time_date = ntp_time_date.substring(0, ntp_time_date.length() - 1); //LF,CR
-    //Serial.println(ntp_time_date);
-    //Serial.println(String(ntp_time_date.length()));
-    adjust_clock(ntp_time_date);
+    data = "";
+    data = Serial.readStringUntil('\n');
+    data = data.substring(0, data.length() - 1); //LF,CR
+    //Serial.println(data);
+    //Serial.println(String(data.length()));
+    split_data(data);
   }
 }
 //------------------------------------------------------------------------------
-void adjust_clock(String input) { //ntp-time,16,29,31,19,10,2020,0,   (Time & Date & Night=0/1)  >>>UTC !!!
-
+void split_data(String input) {
   //Serial.println("OK:" + ntp_time_date);
-
   String delimiter = ",";
   int delimiter_pos_1, delimiter_pos_2, delimiter_pos_3, delimiter_pos_4, delimiter_pos_5, delimiter_pos_6, delimiter_pos_7, delimiter_pos_8;
 
   delimiter_pos_1 = input.indexOf(delimiter);
-  delimiter_pos_2 = input.indexOf(delimiter, delimiter_pos_1 + 1);
-  delimiter_pos_3 = input.indexOf(delimiter, delimiter_pos_2 + 1);
-  delimiter_pos_4 = input.indexOf(delimiter, delimiter_pos_3 + 1);
-  delimiter_pos_5 = input.indexOf(delimiter, delimiter_pos_4 + 1);
-  delimiter_pos_6 = input.indexOf(delimiter, delimiter_pos_5 + 1);
-  delimiter_pos_7 = input.indexOf(delimiter, delimiter_pos_6 + 1);
-  delimiter_pos_8 = input.indexOf(delimiter, delimiter_pos_7 + 1);
-
   String value_0 = input.substring(0, delimiter_pos_1);
-  int value_1 = input.substring(delimiter_pos_1 + 1, delimiter_pos_2).toInt();
-  int value_2 = input.substring(delimiter_pos_2 + 1, delimiter_pos_3).toInt();
-  int value_3 = input.substring(delimiter_pos_3 + 1, delimiter_pos_4).toInt();
-  int value_4 = input.substring(delimiter_pos_4 + 1, delimiter_pos_5).toInt();
-  int value_5 = input.substring(delimiter_pos_5 + 1, delimiter_pos_6).toInt();
-  int value_6 = input.substring(delimiter_pos_6 + 1, delimiter_pos_7).toInt();
-  is_night = input.substring(delimiter_pos_7 + 1, delimiter_pos_8).toInt();
 
-  if (value_0 == "ntp-time") {
-    ntp_sync = true;
-    Serial.println("ntp-sync:true");
+  if (value_0 == "ntp-time") {//ntp-time,16,29,31,19,10,2020,0,   (Time & Date & Night=0/1)  >>>UTC !!!
+
+    delimiter_pos_2 = input.indexOf(delimiter, delimiter_pos_1 + 1);
+    delimiter_pos_3 = input.indexOf(delimiter, delimiter_pos_2 + 1);
+    delimiter_pos_4 = input.indexOf(delimiter, delimiter_pos_3 + 1);
+    delimiter_pos_5 = input.indexOf(delimiter, delimiter_pos_4 + 1);
+    delimiter_pos_6 = input.indexOf(delimiter, delimiter_pos_5 + 1);
+    delimiter_pos_7 = input.indexOf(delimiter, delimiter_pos_6 + 1);
+    delimiter_pos_8 = input.indexOf(delimiter, delimiter_pos_7 + 1);
+
+    int value_1 = input.substring(delimiter_pos_1 + 1, delimiter_pos_2).toInt();
+    int value_2 = input.substring(delimiter_pos_2 + 1, delimiter_pos_3).toInt();
+    int value_3 = input.substring(delimiter_pos_3 + 1, delimiter_pos_4).toInt();
+    int value_4 = input.substring(delimiter_pos_4 + 1, delimiter_pos_5).toInt();
+    int value_5 = input.substring(delimiter_pos_5 + 1, delimiter_pos_6).toInt();
+    int value_6 = input.substring(delimiter_pos_6 + 1, delimiter_pos_7).toInt();
+    is_night = input.substring(delimiter_pos_7 + 1, delimiter_pos_8).toInt();
+
+    ntp_sync_indicator = false;;
+    Serial.println("ntp-sync: true");
     Serial.println(String(value_1) + ":" + String(value_2) + ":" + String(value_3) + "/" + String(value_4) + "." +  String(value_5) + "." + String(value_6) + "/" + String(is_night));
 
     setTime(value_1, value_2, value_3, value_4, value_5, value_6);
@@ -186,6 +181,23 @@ void adjust_clock(String input) { //ntp-time,16,29,31,19,10,2020,0,   (Time & Da
 
   if (value_0 == "get-time") {
     Serial.println(date_string + "/" + time_string + "/" + "Night:" + String(is_night));
+  }
+
+  if (value_0 == "set-text") {  //set-text,3,Hallo Welt,
+
+    delimiter_pos_2 = input.indexOf(delimiter, delimiter_pos_1 + 1);
+    delimiter_pos_3 = input.indexOf(delimiter, delimiter_pos_2 + 1);
+
+    int value_1 = input.substring(delimiter_pos_1 + 1, delimiter_pos_2).toInt();
+    String text = input.substring(delimiter_pos_2 + 1, delimiter_pos_3);
+
+    if (value_1 == 1)set_vfd_blink_text(text, 250, 15); //frequency 250 , often 15
+    if (value_1 == 2)set_vfd_scroll_text(text, 250); //delay time 250
+    if (value_1 == 3) {
+      for (int i = 0; i < 1000; i++) {
+        set_vfd_text(text, false);   //must be a string of length 8
+      }
+    }
   }
 }
 //------------------------------------------------------------------------------
