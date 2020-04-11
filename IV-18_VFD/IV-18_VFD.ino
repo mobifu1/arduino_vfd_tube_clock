@@ -7,16 +7,19 @@
 //// MAX6921
 //// datasheet: http://datasheets.maximintegrated.com/en/ds/MAX6921-MAX6931.pdf
 #include "Wire.h"
-//#include "Time.h"
-#include "TimeLib.h"
-#include "DCF77.h"
+#include <Time.h>
+#include <Timezone.h>
+TimeChangeRule CEST = {"", Last, Sun, Mar, 2, 120};
+TimeChangeRule CET = {"", Last, Sun, Oct, 3, 60};
+Timezone CE(CEST, CET);
+TimeChangeRule *tcr;
 
-#define DCF_PIN 2           // Connection pin to DCF 77 device
-#define DCF_INTERRUPT 0    // Interrupt number associated with pin
-#define SWITCH_0 0
+int is_night = 1; // day=0 / night=1
 
-time_t time;
-DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
+String Tag[7] = {"SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"};
+const char *Month[12] = {"JANUAR", "FEBRUAR", "MAERZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"};
+String date_string = "";
+String time_string = "";
 
 #define blank 7
 #define lload 8
@@ -49,89 +52,66 @@ boolean digit_8;
 boolean digit_9;
 
 //Time:
-int hour_int = 0;
+int hour_int = 0; //UTC
 int minute_int = 0;
 int second_int = 0;
-int day_int = 1;
-int month_int = 1;
-int year_int = 1970;
-const char *Month[12] = {"JANUAR", "FEBRUAR", "MAERZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"};
-boolean sync_indicator = false;
-boolean sync_dcf77 = false;
+int day_int = 0;
+int month_int = 0;
+int year_int = 0;
 
-long system_clock = 0;
+boolean sync_indicator = false;
+boolean ntp_sync = false;
+String ntp_time_date = "";
+
 //------------------------------------------------------------------------------
 void setup() {
 
-  DCF.Start();
-
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(led, OUTPUT);
   pinMode(din, OUTPUT);
   pinMode(lload, OUTPUT);
   pinMode(clk, OUTPUT);
   pinMode(blank, OUTPUT);
+  pinMode(BOOST, OUTPUT);
 
   digitalWrite(blank, LOW);
   digitalWrite(clk, LOW);
   digitalWrite(lload, LOW);
   digitalWrite(din, LOW);
+  digitalWrite(BOOST, LOW);
 
-  pinMode(SWITCH_0, INPUT);
-  brightness_control(2, 20);//divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-
-  set_vfd_blink_text("DCF V1.0", 250, 15);
-  set_vfd_scroll_text("SEARCHING SIGNAL........", 250);
-
+  brightness_control(2, 20); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  set_vfd_blink_text("NTP WiFi V1.1", 250, 15);
+  set_vfd_scroll_text("Wait NTP........", 250);
+  setTime(0, 0, 0, 1, 1, 2020);//UTC
 }
 //------------------------------------------------------------------------------
 void loop() {
 
-  time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
+  serial0_event(); // scan for ntp time of Serial.port:
 
-  if (second_int  == 59 && (minute_int % 20 == 0)) sync_dcf77 = false; // force to resync every 20 minutes > left point on vfd tube
-
-  if (DCFtime == 0) {
-    if (sync_dcf77 == false) {
-       boolean val = digitalRead(DCF_PIN);
-      if (val == LOW) sync_indicator = false;
-      if (val == HIGH) sync_indicator = true;
+  if (ntp_sync == false) {
+    sync_indicator = true;
+    if (second() == 0) {
+      delay(1000);
+      Serial.println("ntp-sync: false");
     }
-
-    if (system_clock + 1000 < millis()) {
-      system_clock = millis();
-      second_int++;
-    }
-
-    if (second_int == 60) { //time counter
-      second_int = 0;
-      minute_int ++;
-
-      if (minute_int == 60) {
-        minute_int = 0;
-        hour_int ++;
-
-        if (hour_int == 24) {
-          hour_int = 0;
-        }
-      }
-    }
-  } 
-  if (DCFtime != 0) {
-Serial.println("DCF==1"); 
-    setTime(DCFtime);
-    hour_int = hour();
-    minute_int = minute();
-    Serial.println(minute_int); 
-    second_int = second();
-    day_int = day();
-    month_int = month();
-    year_int = year();
-    sync_dcf77 = true;
-    sync_indicator = false;
   }
 
-  //----------------------------------
+  if (ntp_sync == true) {
+    sync_indicator = false;
+    if (minute() == 1 && second() == 0) {
+      ntp_sync = false;
+    }
+  }
+
+  hour_int = hour();
+  minute_int = minute();
+  second_int = second();
+  day_int = day();
+  month_int = month();
+  year_int = year();
+
   String hour_string = String(hour_int);
   String minute_string = String(minute_int);
   String second_string = String(second_int);
@@ -144,14 +124,70 @@ Serial.println("DCF==1");
   if (minute_string.length() == 1)  minute_string = "0" + minute_string;     //adding a 0 if minute is 0-9
   if (second_string.length() == 1)  second_string = "0" + second_string;     //adding a 0 if second is 0-9
 
-  String date_string = day_string + " " + month_string + " " + year_string;
-  String time_string = hour_string + "-" + minute_string + "-" + second_string;
+  date_string = day_string + " " + month_string + " " + year_string;
+  time_string = hour_string + "-" + minute_string + "-" + second_string;
 
-  if (digitalRead(SWITCH_0) == LOW) {
-    set_vfd_scroll_date(date_string, 200);
-  } else set_vfd_text(time_string, sync_indicator);   //must be a string of length 8
+  if (is_night == 0) {
+    brightness_control(1, 0); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  }
+  if (is_night == 1) {
+    set_vfd_text(time_string, sync_indicator);   //must be a string of length 8
+    brightness_control(2, 20); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  }
+
 }
+//----------------------------------------------------------------------------------------------------------------------
+void serial0_event() {
 
+  if (Serial.available() > 0) {
+    ntp_time_date = "";
+    ntp_time_date = Serial.readStringUntil('\n');
+    ntp_time_date = ntp_time_date.substring(0, ntp_time_date.length() - 1); //LF,CR
+    //Serial.println(ntp_time_date);
+    //Serial.println(String(ntp_time_date.length()));
+    adjust_clock(ntp_time_date);
+  }
+}
+//------------------------------------------------------------------------------
+void adjust_clock(String input) { //ntp-time,16,29,31,19,10,2020,0,   (Time & Date & Night=0/1)  >>>UTC !!!
+
+  //Serial.println("OK:" + ntp_time_date);
+
+  String delimiter = ",";
+  int delimiter_pos_1, delimiter_pos_2, delimiter_pos_3, delimiter_pos_4, delimiter_pos_5, delimiter_pos_6, delimiter_pos_7, delimiter_pos_8;
+
+  delimiter_pos_1 = input.indexOf(delimiter);
+  delimiter_pos_2 = input.indexOf(delimiter, delimiter_pos_1 + 1);
+  delimiter_pos_3 = input.indexOf(delimiter, delimiter_pos_2 + 1);
+  delimiter_pos_4 = input.indexOf(delimiter, delimiter_pos_3 + 1);
+  delimiter_pos_5 = input.indexOf(delimiter, delimiter_pos_4 + 1);
+  delimiter_pos_6 = input.indexOf(delimiter, delimiter_pos_5 + 1);
+  delimiter_pos_7 = input.indexOf(delimiter, delimiter_pos_6 + 1);
+  delimiter_pos_8 = input.indexOf(delimiter, delimiter_pos_7 + 1);
+
+  String value_0 = input.substring(0, delimiter_pos_1);
+  int value_1 = input.substring(delimiter_pos_1 + 1, delimiter_pos_2).toInt();
+  int value_2 = input.substring(delimiter_pos_2 + 1, delimiter_pos_3).toInt();
+  int value_3 = input.substring(delimiter_pos_3 + 1, delimiter_pos_4).toInt();
+  int value_4 = input.substring(delimiter_pos_4 + 1, delimiter_pos_5).toInt();
+  int value_5 = input.substring(delimiter_pos_5 + 1, delimiter_pos_6).toInt();
+  int value_6 = input.substring(delimiter_pos_6 + 1, delimiter_pos_7).toInt();
+  is_night = input.substring(delimiter_pos_7 + 1, delimiter_pos_8).toInt();
+
+  if (value_0 == "ntp-time") {
+    ntp_sync = true;
+    Serial.println("ntp-sync:true");
+    Serial.println(String(value_1) + ":" + String(value_2) + ":" + String(value_3) + "/" + String(value_4) + "." +  String(value_5) + "." + String(value_6) + "/" + String(is_night));
+
+    setTime(value_1, value_2, value_3, value_4, value_5, value_6);
+    time_t cet = CE.toLocal(now(), &tcr);
+    setTime(cet);
+  }
+
+  if (value_0 == "get-time") {
+    Serial.println(date_string + "/" + time_string + "/" + "Night:" + String(is_night));
+  }
+}
 //------------------------------------------------------------------------------
 void set_vfd_scroll_text(String text, int delay_time) {
 
@@ -408,7 +444,6 @@ void brightness_control(byte divide_value, byte brightness_value) {//1-5, 0-40
 
   setPwmFrequency(BOOST, value); //1,8,64,256,1024
   analogWrite(BOOST, brightness_value); //Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
-
 }
 
 //--------------------- Divide PWM Frequency-------------------------------------
