@@ -14,9 +14,8 @@ TimeChangeRule CET = {"", Last, Sun, Oct, 3, 60};
 Timezone CE(CEST, CET);
 TimeChangeRule *tcr;
 
-int is_night = 1; // day=0 / night=1
+int is_vfd_on = 1; // day=0 / night=1
 
-String Tag[7] = {"SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"};
 const char *Month[12] = {"JANUAR", "FEBRUAR", "MAERZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"};
 String date_string = "";
 String time_string = "";
@@ -123,12 +122,11 @@ void loop() {
   date_string = day_string + " " + month_string + " " + year_string;
   time_string = hour_string + "-" + minute_string + "-" + second_string;
 
-  if (is_night == 0) {
-    brightness_control(1, 0); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
+  if (is_vfd_on == 0) {
+    set_vfd_text("        ", false);   //must be a string of length 8
   }
-  if (is_night == 1) {
+  if (is_vfd_on == 1) {
     set_vfd_text(time_string, ntp_sync_indicator);   //must be a string of length 8
-    brightness_control(2, 20); //divide factor 1-5, Pulse Width 0-40 / 10=22V, 20=41V, 30=58V, 40=75V
   }
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -168,11 +166,11 @@ void split_data(String input) {
     int value_4 = input.substring(delimiter_pos_4 + 1, delimiter_pos_5).toInt();
     int value_5 = input.substring(delimiter_pos_5 + 1, delimiter_pos_6).toInt();
     int value_6 = input.substring(delimiter_pos_6 + 1, delimiter_pos_7).toInt();
-    is_night = input.substring(delimiter_pos_7 + 1, delimiter_pos_8).toInt();
+    is_vfd_on = input.substring(delimiter_pos_7 + 1, delimiter_pos_8).toInt();
 
     ntp_sync_indicator = false;;
     Serial.println("ntp-sync: true");
-    Serial.println(String(value_1) + ":" + String(value_2) + ":" + String(value_3) + "/" + String(value_4) + "." +  String(value_5) + "." + String(value_6) + "/" + String(is_night));
+    Serial.println(String(value_1) + ":" + String(value_2) + ":" + String(value_3) + "/" + String(value_4) + "." +  String(value_5) + "." + String(value_6) + "/" + String(is_vfd_on));
 
     setTime(value_1, value_2, value_3, value_4, value_5, value_6);
     time_t cet = CE.toLocal(now(), &tcr);
@@ -180,7 +178,7 @@ void split_data(String input) {
   }
 
   if (value_0 == "get-time") {
-    Serial.println(date_string + "/" + time_string + "/" + "Night:" + String(is_night));
+    Serial.println(date_string + "/" + time_string + "/" + "Night:" + String(is_vfd_on));
   }
 
   if (value_0 == "set-text") {  //set-text,3,Hallo Welt,
